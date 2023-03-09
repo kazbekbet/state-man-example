@@ -10,7 +10,7 @@ import {
 } from './model';
 import { useStore } from '../../lib/react-adapter';
 
-export function Counter() {
+export default function Counter() {
   const counter = useStore(counterStore);
   const isLoading = useStore(isLoadingStore);
   const errorReason = useStore(errorReasonStore);

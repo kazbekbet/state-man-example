@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import './App.css';
-import { Counter } from './entity/counter';
+const Counter = lazy(() => import('./entity/counter'));
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <Counter />
+        <Suspense fallback="Загрузка...">
+          <Counter />
+        </Suspense>
       </header>
     </div>
   );
