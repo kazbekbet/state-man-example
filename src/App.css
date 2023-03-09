@@ -24,6 +24,25 @@
   color: white;
 }
 
+.Buttons-container {
+  display: flex;
+}
+
+.Button {
+  padding: 0.5rem;
+  margin: 0.5rem;
+  background-color: #282c34;
+  color: white;
+  border: solid white;
+  border-radius: 0.5rem;
+  transition: background-color ease-in-out 0.3s;
+}
+
+.Button:hover {
+  background-color: white;
+  color: #282c34;
+}
+
 .App-link {
   color: #61dafb;
 }
