@@ -1,44 +1,60 @@
 import { Subscriber, Stream, SubscriberImpl } from '../../reactivity';
 
+export interface StoreOptions {
+  attachLogger?: boolean;
+  name?: string;
+}
+
 export class Store<Val> {
-  constructor(private value: Val) {
+  constructor(private value: Val, options?: StoreOptions) {
     this.initialValue = value;
+    this.prevValue = value;
+    this.isLoggerAttached = Boolean(options?.attachLogger);
+    this.name = options?.name;
   }
 
+  public prevValue;
   private readonly initialValue;
-
+  private readonly isLoggerAttached;
+  private readonly name;
   private watcherFn: (val: Val) => void = () => {};
-
   private subscribers = new Set<Subscriber<unknown>>();
 
-  //TODO: привязка к реакту, избавиться
-  private listeners: Function[] = [];
+  //TODO: подумать.
+  private computedListeners: Set<Function> = new Set();
 
   //TODO: привязка к реакту, избавиться
-  getSnapshot = () => {
+  private reactListeners: Function[] = [];
+
+  public getState = () => {
     return this.value;
-  }
+  };
 
   //TODO: привязка к реакту, избавиться
   subscribe = (listener: Function) => {
-    this.listeners.push(listener);
+    this.reactListeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+      this.reactListeners = this.reactListeners.filter(l => l !== listener);
     };
-  }
+  };
 
   //TODO: привязка к реакту, избавиться
-  notifyReactListeners() {
-   this.listeners.forEach(listener => listener());
+  private notifyReactListeners() {
+    this.reactListeners.forEach(listener => listener());
   }
 
-  public on<Payload>(event: Stream<Payload>, reducer: (state: Val, value?: Payload, initialValue?: Val) => Val) {
+  public on<Payload>(
+    event: Stream<Payload>,
+    reducer: (state: Val, value: Payload, initialValue: Val) => Val
+  ) {
     const subscriber = new SubscriberImpl(event);
     this.subscribers.add(subscriber);
 
-    subscriber.listen(val => {
-      this.value = reducer(this.value, val);
+    subscriber.listen<void, Payload>(val => {
+      this.prevValue = this.value;
+      this.value = reducer(this.value, val, this.initialValue);
       this.watcherFn(this.value);
+      this.log();
       this.notifyReactListeners();
     });
 
@@ -71,9 +87,25 @@ export class Store<Val> {
     subscriber.listen(_ => {
       this.value = this.initialValue;
       this.watcherFn(this.value);
+      this.log();
       this.notifyReactListeners();
     });
 
     return this;
+  }
+
+  private log() {
+    if (this.isLoggerAttached) {
+      const name = this.name ?? '';
+
+      if (typeof this.value === 'object') {
+        console.log(`Current state of %c${name}:`, 'color: green');
+        console.table(this.value);
+
+        return;
+      }
+
+      console.log(`Current state of %c${name}:`, 'color: green', this.value);
+    }
   }
 }

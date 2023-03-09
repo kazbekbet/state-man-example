@@ -17,24 +17,37 @@ export const asyncIncrement = setAsyncEvent(
     asyncCount(countTo, delay, isReject)
 );
 
-export const counterStore = setStore(0)
+export const counterStore = setStore(0, {
+  attachLogger: false,
+  name: 'counterStore',
+})
   .on(increment.event, state => state + 1)
   .on(decrement.event, state => state - 1)
-  //@ts-expect-error
   .on(asyncIncrement.fulfilled, (state, payload) => state + payload)
-  .watch(val => console.info('New value is: ', val))
   .clear(clear.event)
   .destroy(unmount.event);
 
-export const isLoadingStore = setStore(false)
-  .on(asyncIncrement.pending, () => true)
-  .on(asyncIncrement.fulfilled, () => false)
-  .on(asyncIncrement.rejected, () => false)
-  .clear(clear.event);
-
-export const errorReasonStore = setStore('')
-  //@ts-expect-error
-  .on(asyncIncrement.pending, (_, initialValue) => initialValue)
-  //@ts-expect-error
-  .on(asyncIncrement.rejected, (_, error) => error.message)
+export const statusStore = setStore(
+  {
+    isLoading: false,
+    isFulfilled: false,
+    isError: false,
+    errorReason: '',
+  },
+  { attachLogger: false, name: 'statusStore' }
+)
+  .on(asyncIncrement.pending, (_state, _, initialValue) => ({
+    ...initialValue,
+    isLoading: true,
+  }))
+  .on(asyncIncrement.fulfilled, state => ({
+    ...state,
+    isLoading: false,
+    isFulfilled: true,
+  }))
+  .on(asyncIncrement.rejected, (_, payload, initialValue) => ({
+    ...initialValue,
+    isError: true,
+    errorReason: payload.message,
+  }))
   .clear(clear.event);

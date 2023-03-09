@@ -5,15 +5,22 @@ import {
   clear,
   counterStore,
   asyncIncrement,
-  isLoadingStore,
-  errorReasonStore,
+  statusStore,
 } from './model';
 import { useStore } from '../../lib/react-adapter';
 
+const INCREMENT_MORE_COUNT = 1_000_000;
+
 export default function Counter() {
   const counter = useStore(counterStore);
-  const isLoading = useStore(isLoadingStore);
-  const errorReason = useStore(errorReasonStore);
+  const { isLoading, isError, errorReason, isFulfilled } =
+    useStore(statusStore);
+
+  function handleIncrementMore() {
+    for (let i = 0; i < INCREMENT_MORE_COUNT; i++) {
+      increment();
+    }
+  }
 
   return (
     <>
@@ -22,13 +29,16 @@ export default function Counter() {
       </h1>
 
       {isLoading && <span>Loading...</span>}
-      {errorReason && <span>{errorReason}</span>}
+      {isError && <span style={{ color: 'red' }}>{errorReason}</span>}
+      {isFulfilled && (
+        <span style={{ color: 'green' }}>Успешно загружено!</span>
+      )}
 
       <div className="Buttons-container">
-        <button className="Button" onClick={increment}>
+        <button className="Button" onClick={() => increment()}>
           Increment
         </button>
-        <button className="Button" onClick={decrement}>
+        <button className="Button" onClick={() => decrement()}>
           Decrement
         </button>
         <button
@@ -49,7 +59,10 @@ export default function Counter() {
         >
           Async increment with error
         </button>
-        <button className="Button" onClick={clear}>
+        <button className="Button" onClick={handleIncrementMore}>
+          Call increment {INCREMENT_MORE_COUNT} count!
+        </button>
+        <button className="Button" onClick={() => clear()}>
           Clear
         </button>
       </div>

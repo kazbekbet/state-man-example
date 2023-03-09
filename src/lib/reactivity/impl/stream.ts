@@ -21,7 +21,7 @@ export class StreamImpl<Val> implements Stream<Val> {
     this.subscribers.delete(sub);
   }
 
-  fire(value?: Val) {
+  fire(value: Val) {
     if (typeof this.checkEqualFunc === 'function' && value) {
       if (this.checkEqualFunc(value, this._value)) {
         this._value = value;
@@ -37,7 +37,7 @@ export class StreamImpl<Val> implements Stream<Val> {
     return this;
   }
 
-  private notifySubs(value?: Val) {
+  private notifySubs(value: Val) {
     this.subscribers.forEach(sub => sub.notify(value));
   }
 }

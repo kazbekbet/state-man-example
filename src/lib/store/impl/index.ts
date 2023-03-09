@@ -1,15 +1,15 @@
-import { Store } from './store';
+import { Store, StoreOptions } from './store';
 import { StreamImpl } from '../../reactivity';
 
-export function setStore<Val>(initialValue: Val) {
-  return new Store(initialValue);
+export function setStore<Val>(initialValue: Val, options?: StoreOptions) {
+  return new Store(initialValue, options);
 }
 
 export function setEvent<Payload>() {
   const event = new StreamImpl<Payload>();
 
-  function fire() {
-    return event.fire();
+  function fire(payload: Payload) {
+    return event.fire(payload);
   }
 
   fire.event = event;
@@ -24,9 +24,10 @@ export function setAsyncEvent<Args, Payload>(asyncFn: AsyncFn<Args, Payload>) {
     fulfilledEvent = new StreamImpl<Payload>(),
     rejectedEvent = new StreamImpl<Error>();
 
-  async function fireAsync(...args: Parameters<typeof asyncFn>) {
+  async function fireAsync(...args: Args[]) {
     pendingEvent.fire();
-    asyncFn(...args)
+
+    promisifyFn(asyncFn, ...args)
       .then(res => fulfilledEvent.fire(res))
       .catch(error => rejectedEvent.fire(error));
   }
@@ -36,4 +37,11 @@ export function setAsyncEvent<Args, Payload>(asyncFn: AsyncFn<Args, Payload>) {
   fireAsync.rejected = rejectedEvent;
 
   return fireAsync;
+}
+
+async function promisifyFn<Args, Payload>(
+  asyncFn: AsyncFn<Args, Payload>,
+  ...args: Args[]
+) {
+  return await asyncFn(...args);
 }
