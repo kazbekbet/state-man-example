@@ -1,16 +1,16 @@
 import { setAsyncEvent, setEvent, setStore } from '../../lib';
 import { asyncCount } from './api';
 
-export const increment = setEvent<void>();
-export const decrement = setEvent<void>();
-export const clear = setEvent<void>();
-export const unmount = setEvent<void>();
-
 interface AsyncIncrementPayload {
   countTo: number;
   delay: number;
   isReject: boolean;
 }
+
+export const increment = setEvent<void>();
+export const decrement = setEvent<void>();
+export const clear = setEvent<void>();
+export const unmount = setEvent<void>();
 
 export const asyncIncrement = setAsyncEvent(
   ({ countTo, delay, isReject }: AsyncIncrementPayload) =>

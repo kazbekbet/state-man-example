@@ -1,11 +1,12 @@
 import { Store, StoreOptions } from './store';
 import { StreamImpl } from '../../reactivity';
+import type { SetEvent, SetAsyncEvent } from '../abstract/contracts';
 
 export function setStore<Val>(initialValue: Val, options?: StoreOptions) {
   return new Store(initialValue, options);
 }
 
-export function setEvent<Payload>() {
+export function setEvent<Payload>(): SetEvent.Return<Payload> {
   const event = new StreamImpl<Payload>();
 
   function fire(payload: Payload) {
@@ -19,7 +20,9 @@ export function setEvent<Payload>() {
 
 type AsyncFn<Args, Payload> = (...args: Args[]) => Promise<Payload>;
 
-export function setAsyncEvent<Args, Payload>(asyncFn: AsyncFn<Args, Payload>) {
+export function setAsyncEvent<Args, Payload>(
+  asyncFn: SetAsyncEvent.ArgFn<Args, Payload>
+): SetAsyncEvent.Return<Args, Payload> {
   const pendingEvent = new StreamImpl<void>(),
     fulfilledEvent = new StreamImpl<Payload>(),
     rejectedEvent = new StreamImpl<Error>();
