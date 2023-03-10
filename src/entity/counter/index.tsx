@@ -7,7 +7,7 @@ import {
   asyncIncrement,
   statusStore,
 } from './model';
-import { useStore } from '../../lib/react-adapter';
+import { useStore } from 'lib/re-event/react';
 
 const INCREMENT_MORE_COUNT = 1_000_000;
 

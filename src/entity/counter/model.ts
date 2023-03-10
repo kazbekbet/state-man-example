@@ -1,4 +1,8 @@
-import { setAsyncEvent, setEvent, setStore } from '../../lib';
+import {
+  setAsyncEvent,
+  setEvent,
+  setStore,
+} from 'lib/re-event';
 import { asyncCount } from './api';
 
 interface AsyncIncrementPayload {

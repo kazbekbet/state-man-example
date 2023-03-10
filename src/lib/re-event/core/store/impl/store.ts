@@ -1,4 +1,5 @@
-import { Subscriber, Stream, SubscriberImpl } from '../../reactivity';
+import { Subscriber, SubscriberImpl } from '../../reactivity';
+import type { Event } from '../abstract/event';
 
 export interface StoreOptions {
   attachLogger?: boolean;
@@ -13,28 +14,27 @@ export class Store<Val> {
     this.name = options?.name;
   }
 
-  public prevValue;
+  private prevValue;
   private readonly initialValue;
   private readonly isLoggerAttached;
   private readonly name;
   private watcherFn: (val: Val) => void = () => {};
-  private subscribers = new Set<Subscriber<unknown>>();
+  private readonly subscribers = new Set<Subscriber<unknown>>();
 
   //TODO: подумать.
-  private computedListeners: Set<Function> = new Set();
+  private readonly computedListeners: Set<{
+    condition: (value: Val) => boolean;
+    fn: (value: Val) => unknown;
+  }> = new Set();
 
   //TODO: привязка к реакту, избавиться
-  private reactListeners: Function[] = [];
-
-  public getState = () => {
-    return this.value;
-  };
+  private readonly reactListeners: Set<Function> = new Set();
 
   //TODO: привязка к реакту, избавиться
   subscribe = (listener: Function) => {
-    this.reactListeners.push(listener);
+    this.reactListeners.add(listener);
     return () => {
-      this.reactListeners = this.reactListeners.filter(l => l !== listener);
+      this.reactListeners.delete(listener);
     };
   };
 
@@ -43,8 +43,12 @@ export class Store<Val> {
     this.reactListeners.forEach(listener => listener());
   }
 
+  public getState = () => {
+    return this.value;
+  };
+
   public on<Payload>(
-    event: Stream<Payload>,
+    event: Event<Payload>,
     reducer: (state: Val, value: Payload, initialValue: Val) => Val
   ) {
     const subscriber = new SubscriberImpl(event);
@@ -55,6 +59,7 @@ export class Store<Val> {
       this.value = reducer(this.value, val, this.initialValue);
       this.watcherFn(this.value);
       this.log();
+      this.notifyComputedListeners(this.value);
       this.notifyReactListeners();
     });
 
@@ -66,7 +71,7 @@ export class Store<Val> {
     return this;
   }
 
-  public destroy(event: Stream<void>) {
+  public destroy(event: Event<void>) {
     const subscriber = new SubscriberImpl(event);
 
     subscriber.listen(_ => {
@@ -81,7 +86,7 @@ export class Store<Val> {
     return this;
   }
 
-  public clear(event: Stream<void>) {
+  public clear(event: Event<void>) {
     const subscriber = new SubscriberImpl(event);
 
     subscriber.listen(_ => {
@@ -92,6 +97,23 @@ export class Store<Val> {
     });
 
     return this;
+  }
+
+  /** Don't use directly. */
+  public addComputedListener(listener: {
+    condition: (value: Val) => boolean;
+    fn: (value: Val) => unknown;
+  }) {
+    //TODO: подумать насчёт очистки.
+    this.computedListeners.add(listener);
+  }
+
+  private notifyComputedListeners(value: Val) {
+    this.computedListeners.forEach(listener => {
+      if (listener.condition(value)) {
+        listener.fn(value);
+      }
+    });
   }
 
   private log() {

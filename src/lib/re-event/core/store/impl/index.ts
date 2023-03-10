@@ -1,13 +1,13 @@
 import { Store, StoreOptions } from './store';
-import { StreamImpl } from '../../reactivity';
-import type { SetEvent, SetAsyncEvent } from '../abstract/contracts';
-
-export function setStore<Val>(initialValue: Val, options?: StoreOptions) {
-  return new Store(initialValue, options);
-}
+import { EventImpl } from './event';
+import type {
+  SetAsyncEvent,
+  SetComputedStore,
+  SetEvent,
+} from '../abstract/contracts';
 
 export function setEvent<Payload>(): SetEvent.Return<Payload> {
-  const event = new StreamImpl<Payload>();
+  const event = new EventImpl<Payload>();
 
   function fire(payload: Payload) {
     return event.fire(payload);
@@ -18,14 +18,12 @@ export function setEvent<Payload>(): SetEvent.Return<Payload> {
   return fire;
 }
 
-type AsyncFn<Args, Payload> = (...args: Args[]) => Promise<Payload>;
-
 export function setAsyncEvent<Args, Payload>(
   asyncFn: SetAsyncEvent.ArgFn<Args, Payload>
 ): SetAsyncEvent.Return<Args, Payload> {
-  const pendingEvent = new StreamImpl<void>(),
-    fulfilledEvent = new StreamImpl<Payload>(),
-    rejectedEvent = new StreamImpl<Error>();
+  const pendingEvent = new EventImpl<void>(),
+    fulfilledEvent = new EventImpl<Payload>(),
+    rejectedEvent = new EventImpl<Error>();
 
   async function fireAsync(...args: Args[]) {
     pendingEvent.fire();
@@ -43,8 +41,29 @@ export function setAsyncEvent<Args, Payload>(
 }
 
 async function promisifyFn<Args, Payload>(
-  asyncFn: AsyncFn<Args, Payload>,
+  asyncFn: SetAsyncEvent.ArgFn<Args, Payload>,
   ...args: Args[]
 ) {
   return await asyncFn(...args);
+}
+
+export function setStore<Val>(initialValue: Val, options?: StoreOptions) {
+  return new Store(initialValue, options);
+}
+
+export function setComputedStore<Val>({
+  store,
+  condition,
+}: SetComputedStore.Args<Val>) {
+  const updateEvent = setEvent<Val>();
+
+  store.addComputedListener({
+    condition,
+    fn: val => updateEvent(val),
+  });
+
+  return new Store(store.getState()).on(
+    updateEvent.event,
+    (_, payload) => payload
+  );
 }

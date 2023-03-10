@@ -1,5 +1,5 @@
-import { Stream } from '../abstract/stream';
-import { Subscriber } from '../abstract/subscriber';
+import type { Stream } from '../abstract/stream';
+import type { Subscriber } from '../abstract/subscriber';
 
 export class StreamImpl<Val> implements Stream<Val> {
   constructor(
