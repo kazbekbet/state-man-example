@@ -23,7 +23,7 @@ export class StreamImpl<Val> implements Stream<Val> {
 
   fire(value: Val) {
     if (typeof this.checkEqualFunc === 'function' && value) {
-      if (this.checkEqualFunc(value, this._value)) {
+      if (!this.checkEqualFunc(value, this._value)) {
         this._value = value;
         this.notifySubs(value);
 
